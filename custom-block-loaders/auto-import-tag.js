@@ -17,7 +17,7 @@ if (babelConfig.plugins) {
             tagPrefixToImportOption.set(tagPrefix + '-', opts)
           }
         }
-      }
+      })
     }
   })
 }
@@ -83,7 +83,7 @@ module.exports = function autoImportTemplateLoader (source, map) {
     output += '\nexport default function (Component) {\n'
     output += '  const c = Component.options.components\n'
     imports.forEach(i => {
-      output += `  if (c.${i.fullName} == null && c['${i.tag}'] == null) c.${i.fullName} = ${i.fullName}\n`
+      output += `  if (c.${i.fullName} == null) c.${i.fullName} = ${i.fullName}\n`
     })
     output += '}\n'
   } else {
@@ -98,7 +98,7 @@ module.exports = function autoImportTemplateLoader (source, map) {
 export default function (Component) {
   const c = Component.options.components
   autoImports.forEach(i => {
-    if (c[i.fullName] == null && c[i.tag] == null) c[i.fullName] = i.component
+    if (c[i.fullName] == null) c[i.fullName] = i.component
   })
 }
 `

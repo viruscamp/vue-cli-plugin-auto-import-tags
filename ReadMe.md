@@ -1,6 +1,8 @@
 # vue-cli-plugin-auto-import-tag
 Auto import vue components by tags using babel-plugin-import
 
+USE ON YOUR OWN RISK. WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
+
 ## Usage with vue-cli-3.x
 0. Prerequirements  
 Your project must have these as devDependencies:  

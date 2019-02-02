@@ -13,7 +13,7 @@ module.exports = (api, projectOptions) => {
 
     webpackConfig.module
       .rule('auto-import-tag')
-        .resourceQuery(/blockType=vue-auto-import-tag/)
+        .resourceQuery(/blockType=auto-import-tag/)
         .use('vue-loader')
           .loader(require.resolve('./custom-block-loaders/auto-import-tag'))
           .end()
