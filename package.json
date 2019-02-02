@@ -1,0 +1,19 @@
+{
+  "name": "vue-cli-plugin-auto-import-tag",
+  "version": "0.9.0",
+  "description": "Auto import vue components by tags using babel-plugin-import",
+  "publisher": "viruscamp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/viruscamp/vue-cli-plugin-auto-import-tag"
+  },
+  "main": "index.js",
+  "peerDependencies": {
+    "@babel/core": "^7.0.0",
+    "babel-plugin-import": "^1.0.0",
+    "vue-template-compiler": "^2.5.0"
+  },
+  "optionalDependencies ": {
+    "@vue/cli-service": "^3.0.0"
+  }
+}
