@@ -1,23 +1,41 @@
 const babel = require("@babel/core");
 const babelConfig = babel.loadOptions()
 
-const tagPrefixToImportOption = new Map()
+const mapTagPrefixToLibraryName = new Map()
+function tryAddTagPrefixToLibraryName (libraryName, opts) {
+  if (typeof(opts) === 'object') {
+    if (typeof(opts.libraryName) === 'string') {
+      libraryName = opts.libraryName
+    }
+    if (typeof(opts.tagPrefix) === 'string' && libraryName != null) {
+      let key = opts.tagPrefix + '-'
+      if (mapTagPrefixToLibraryName.has(key)) {
+        console.warn(`Duplcate tagPrefix '${opts.tagPrefix}' for libraryName '${mapTagPrefixToLibraryName.get(key)}' and '${libraryName}'.`)
+        return
+      }
+      mapTagPrefixToLibraryName.set(key, libraryName)
+    }
+  }
+}
 if (babelConfig.plugins) {
   babelConfig.plugins.forEach(plugin => {
-    // TODO 更好的检查 babel-plugin-import 配置的逻辑
+    // TODO 更好的检查 babel-plugin-* 配置的逻辑
+    // https://github.com/ant-design/babel-plugin-import
     if (/[\\/]babel-plugin-import[\\/]/.test(plugin.key)) {
       let options = plugin.options
       if (!Array.isArray(options)) {
+        // babel@7+ options cannot be array
         options = [options]
       }
-      options.forEach(opts => {
-        if (typeof(opts) === 'object') {
-          let tagPrefix = opts.tagPrefix
-          if (typeof(tagPrefix) === 'string' && typeof(opts.libraryName) === 'string') {
-            tagPrefixToImportOption.set(tagPrefix + '-', opts)
-          }
-        }
-      })
+      for (let opts of options) {
+        tryAddTagPrefixToLibraryName(null, opts)
+      }
+    }
+    // https://github.com/viruscamp/babel-plugin-transform-imports/tree/babel-7
+    if (/[\\/]babel-plugin-transform-imports[\\/]/.test(plugin.key)) {
+      for (let [libraryName, opts] of Object.entries(plugin.options)) {
+        tryAddTagPrefixToLibraryName(libraryName, opts)
+      }
     }
   })
 }
@@ -38,9 +56,8 @@ function getTagComponent (tag, prefix) {
   if (tagComponents.has(tag)) {
     return tagComponents.get(tag)
   }
-  let opts = tagPrefixToImportOption.get(prefix)
   let compnentName = dash2Camel(tag.substr(prefix.length)) // AutoComplete
-  let libraryName = opts.libraryName
+  let libraryName = mapTagPrefixToLibraryName.get(prefix)
   if (!isValidImport(compnentName, libraryName)) {
     return null
   }
@@ -63,7 +80,7 @@ module.exports = function autoImportTemplateLoader (source, map) {
   const imports = []
   const tags = JSON.parse(source)
   tags.forEach(tag => {
-    for (const prefix of tagPrefixToImportOption.keys()) {
+    for (const prefix of mapTagPrefixToLibraryName.keys()) {
       let tc = getTagComponent(tag, prefix)
       if (tc != null) {
         imports.push(tc)
