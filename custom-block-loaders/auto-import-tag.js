@@ -98,7 +98,8 @@ module.exports = function autoImportTemplateLoader (source, map) {
       output += `import { ${i.compnentName} as ${i.fullName} } from '${i.libraryName}'\n`
     })
     output += '\nexport default function (Component) {\n'
-    output += '  const c = Component.options.components\n'
+    output += '  let c = Component.options.components\n'
+    output += '  if (c == null) c = Component.options.components = {}\n'
     imports.forEach(i => {
       output += `  if (c.${i.fullName} == null) c.${i.fullName} = ${i.fullName}\n`
     })
@@ -113,7 +114,8 @@ module.exports = function autoImportTemplateLoader (source, map) {
     output +=
 `
 export default function (Component) {
-  const c = Component.options.components
+  let c = Component.options.components
+  if (c == null) c = Component.options.components = {}
   autoImports.forEach(i => {
     if (c[i.fullName] == null) c[i.fullName] = i.component
   })

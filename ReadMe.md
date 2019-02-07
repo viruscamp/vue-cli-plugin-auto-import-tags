@@ -109,7 +109,8 @@ import { DatePicker as ADatePicker } from 'ant-design-vue'
 import { AutoComplete as AAutoComplete } from 'ant-design-vue'
 
 export default function (Component) {
-  const c = Component.options.components
+  let c = Component.options.components
+  if (c == null) c = Component.options.components = {}
   if (c.ADatePicker == null) c.ADatePicker = ADatePicker
   if (c.AAutoComplete == null) c.AAutoComplete = AAutoComplete
 }
@@ -120,5 +121,5 @@ export default function (Component) {
 ```javascript
 import {Breadcrumb as ABreadcrumb} from 'ant-design-vue'
 ```
-It try to import ant-design-vue/es/a-breadcrumb
+It tries to import ant-design-vue/es/a-breadcrumb
 
