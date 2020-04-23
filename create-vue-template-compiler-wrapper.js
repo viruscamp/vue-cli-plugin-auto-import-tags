@@ -2,6 +2,7 @@
 //const compile = require('vue-template-compiler').compile
 //import * as VueTemplateCompiler from 'vue-template-compiler'
 const VueTemplateCompiler = require('vue-template-compiler')
+const tagsCache = require('./tagsCache')
 
 function looseStringParse (str) {
   /* eslint-disable no-new-func */
@@ -31,49 +32,47 @@ function camel2Dash (_str) {
   return str.replace(/([A-Z])/g, $1 => `-${$1.toLowerCase()}`);
 }
 
+function extractTagsFromAst (ast) {
+  const tags = new Set()
+
+  function tryAddTag (tag) {
+    if (isValidComponentTag(tag)) {
+      tags.add(camel2Dash(tag))
+      return true
+    }
+    return false
+  }
+
+  function parseAst (ast) {
+    if (ast.component) {
+      try {
+        let componentName = looseStringParse(ast.component)
+        if (typeof(componentName) === 'string') {
+          tryAddTag(componentName)
+        }
+      } catch (ex) {
+        // do nothing
+      }
+    } else if (typeof(ast.tag) === 'string') {
+      tryAddTag(ast.tag)
+    }
+    if (ast.children) {
+      ast.children.forEach(child => parseAst(child))
+    }
+  }
+  parseAst(ast)
+  return tags
+}
+
 module.exports = function createVueTemplateCompilerWrapper (compiler) {
   const innerCompiler = compiler || VueTemplateCompiler
   return {
     parseComponent (source, options) {
       const descriptor = innerCompiler.parseComponent(source, options)
-
-      // const ast = parse(descriptor.template.content)
-      const { ast } = VueTemplateCompiler.compile(descriptor.template.content)
-      const tags = new Set()
-
-      function tryAddTag (tag) {
-        if (isValidComponentTag(tag)) {
-          tags.add(camel2Dash(tag))
-          return true
-        }
-        return false
-      }
-
-      function parseAst (ast) {
-        if (ast.component) {
-          try {
-            let componentName = looseStringParse(ast.component)
-            if (typeof(componentName) === 'string') {
-              tryAddTag(componentName)
-            }
-          } catch (ex) {
-            // do nothing
-          }
-        } else if (typeof(ast.tag) === 'string') {
-          tryAddTag(ast.tag)
-        }
-        if (ast.children) {
-          ast.children.forEach(child => parseAst(child))
-        }
-      }
-
-      parseAst(ast)
-
       descriptor.customBlocks.push({
         type: 'auto-import-tag',
-        content: JSON.stringify(Array.from(tags)),
-        attrs: {
-        },
+        content: '',
+        attrs: {},
         start: 0,
         end: 0
       })
@@ -82,13 +81,15 @@ module.exports = function createVueTemplateCompilerWrapper (compiler) {
     compile (template, options) {
       const compiled = innerCompiler.compile(template, options)
       const ast = compiled.ast
-      // 拿到了 ast 生成 tag 列表 传给 parseComponent 增加 customBlock
-      // 在 parseComponent 后面执行 无法传递
+      console.log('key in compile ' + options.filename)
+      tagsCache.set(options.filename, extractTagsFromAst(ast))
       return compiled
     },
     ssrCompile (template, options) {
       const compiled = innerCompiler.ssrCompile(template, options)
       const ast = compiled.ast
+      console.log('key in ssrCompile ' + options.filename)
+      tagsCache.set(options.filename, extractTagsFromAst(ast))
       return compiled
     }
   }

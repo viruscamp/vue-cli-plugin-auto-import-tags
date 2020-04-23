@@ -1,5 +1,7 @@
 const babel = require("@babel/core");
-const babelConfig = babel.loadOptions()
+const babelConfig = babel.loadPartialConfig()
+
+const tagsCache = require('../tagsCache')
 
 const mapTagPrefixToLibraryName = new Map()
 function tryAddTagPrefixToLibraryName (libraryName, opts) {
@@ -17,11 +19,12 @@ function tryAddTagPrefixToLibraryName (libraryName, opts) {
     }
   }
 }
-if (babelConfig.plugins) {
-  babelConfig.plugins.forEach(plugin => {
+if (babelConfig.options && babelConfig.options.plugins) {
+  babelConfig.options.plugins.forEach(plugin => {
     // TODO 更好的检查 babel-plugin-* 配置的逻辑
     // https://github.com/ant-design/babel-plugin-import
-    if (/[\\/]babel-plugin-import[\\/]/.test(plugin.key)) {
+    // if (/[\\/]babel-plugin-import[\\/]/.test(plugin.key))
+    if (plugin.file.request === 'import') {
       let options = plugin.options
       if (!Array.isArray(options)) {
         // babel@7+ options cannot be array
@@ -32,7 +35,8 @@ if (babelConfig.plugins) {
       }
     }
     // https://github.com/viruscamp/babel-plugin-transform-imports/tree/babel-7
-    if (/[\\/]babel-plugin-transform-imports[\\/]/.test(plugin.key)) {
+    // if (/[\\/]babel-plugin-transform-imports[\\/]/.test(plugin.key))
+    if (plugin.file.request === 'transform-imports') {
       for (let [libraryName, opts] of Object.entries(plugin.options)) {
         tryAddTagPrefixToLibraryName(libraryName, opts)
       }
@@ -76,18 +80,21 @@ function dash2Camel (_str) {
   return str[0].toUpperCase() + str.substr(1)
 }
 
-module.exports = function autoImportTemplateLoader (source, map) {
+module.exports = function autoImportTagLoader (source, map) {
+  console.log('key in auto-import-tag ' + this.resourcePath)
+  const tags = tagsCache.get(this.resourcePath)
   const imports = []
-  const tags = JSON.parse(source)
-  tags.forEach(tag => {
-    for (const prefix of mapTagPrefixToLibraryName.keys()) {
-      let tc = getTagComponent(tag, prefix)
-      if (tc != null) {
-        imports.push(tc)
-        break
+  if (tags != null) {
+      tags.forEach(tag => {
+      for (const prefix of mapTagPrefixToLibraryName.keys()) {
+        let tc = getTagComponent(tag, prefix)
+        if (tc != null) {
+          imports.push(tc)
+          break
+        }
       }
-    }
-  })
+    })
+  }
 
   let output = ''
   if (imports.length === 0) {
