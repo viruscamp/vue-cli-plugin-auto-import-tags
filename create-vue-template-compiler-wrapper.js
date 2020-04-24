@@ -81,14 +81,12 @@ module.exports = function createVueTemplateCompilerWrapper (compiler) {
     compile (template, options) {
       const compiled = innerCompiler.compile(template, options)
       const ast = compiled.ast
-      console.log('key in compile ' + options.filename)
       tagsCache.set(options.filename, extractTagsFromAst(ast))
       return compiled
     },
     ssrCompile (template, options) {
       const compiled = innerCompiler.ssrCompile(template, options)
       const ast = compiled.ast
-      console.log('key in ssrCompile ' + options.filename)
       tagsCache.set(options.filename, extractTagsFromAst(ast))
       return compiled
     }

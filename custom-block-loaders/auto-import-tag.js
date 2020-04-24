@@ -80,9 +80,8 @@ function dash2Camel (_str) {
   return str[0].toUpperCase() + str.substr(1)
 }
 
-module.exports = function autoImportTagLoader (source, map) {
-  console.log('key in auto-import-tag ' + this.resourcePath)
-  const tags = tagsCache.get(this.resourcePath)
+function autoImportTagCodeGenerate (source, map, resourcePath) {
+  const tags = tagsCache.get(resourcePath)
   const imports = []
   if (tags != null) {
       tags.forEach(tag => {
@@ -129,5 +128,15 @@ export default function (Component) {
 }
 `
   }
-  this.callback(null, output)
+  return output
+}
+
+module.exports = function autoImportTagLoader (source, map) {
+  const loaderContext = this
+  const callback = loaderContext.async()
+  const compiledTemplateRequest = `${loaderContext.resourcePath}?vue&type=template`
+  loaderContext.loadModule(compiledTemplateRequest, (err, source, sourceMap, module) => {
+    const output = autoImportTagCodeGenerate(source, map, loaderContext.resourcePath)
+    callback(null, output)
+  })
 }
