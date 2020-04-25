@@ -1,8 +1,6 @@
 const babel = require("@babel/core");
 const babelConfig = babel.loadPartialConfig()
 
-const tagsCache = require('../tagsCache')
-
 const mapTagPrefixToLibraryName = new Map()
 function tryAddTagPrefixToLibraryName (libraryName, opts) {
   if (typeof(opts) === 'object') {
@@ -21,7 +19,6 @@ function tryAddTagPrefixToLibraryName (libraryName, opts) {
 }
 if (babelConfig.options && babelConfig.options.plugins) {
   babelConfig.options.plugins.forEach(plugin => {
-    // TODO 更好的检查 babel-plugin-* 配置的逻辑
     // https://github.com/ant-design/babel-plugin-import
     // if (/[\\/]babel-plugin-import[\\/]/.test(plugin.key))
     if (plugin.file.request === 'import') {
@@ -80,6 +77,8 @@ function dash2Camel (_str) {
   return str[0].toUpperCase() + str.substr(1)
 }
 
+const tagsCache = require('../tagsCache')
+
 function autoImportTagCodeGenerate (source, map, resourcePath) {
   const tags = tagsCache.get(resourcePath)
   const imports = []
@@ -98,8 +97,7 @@ function autoImportTagCodeGenerate (source, map, resourcePath) {
   let output = ''
   if (imports.length === 0) {
     output = 'export default function (Component) {}\n'
-  } else if (imports.length < 10) {
-    // 生成的代码 已经展开 不用循环
+  } else {
     imports.forEach(i => {
       output += `import { ${i.compnentName} as ${i.fullName} } from '${i.libraryName}'\n`
     })
@@ -110,33 +108,43 @@ function autoImportTagCodeGenerate (source, map, resourcePath) {
       output += `  if (c.${i.fullName} == null) c.${i.fullName} = ${i.fullName}\n`
     })
     output += '}\n'
-  } else {
-    // 生成的代码 使用循环
-    output = 'const autoImports = []\n'
-    imports.forEach(i => {
-      output += `import { ${i.compnentName} as ${i.fullName} } from '${i.libraryName}'\n`
-      output += `autoImports.push({fullName: '${i.fullName}', tag: '${i.tag}', component: ${i.fullName}})\n`
-    })
-    output +=
-`
-export default function (Component) {
-  let c = Component.options.components
-  if (c == null) c = Component.options.components = {}
-  autoImports.forEach(i => {
-    if (c[i.fullName] == null) c[i.fullName] = i.component
-  })
-}
-`
   }
   return output
+}
+
+const loaderUtils = require('loader-utils')
+const path = require('path')
+const hash = require('hash-sum')
+
+function getTemplateRequest (loaderContext, source) {
+  const resourcePath = loaderContext.resourcePath
+
+  const options = loaderUtils.getOptions(loaderContext) || {}
+  const isProduction = options.productionMode || loaderContext.minimize || process.env.NODE_ENV === 'production'
+  const context = loaderContext.rootContext || process.cwd()
+  // module id for scoped CSS & hot-reload
+  const rawShortFilePath = path
+    .relative(context, resourcePath)
+    .replace(/^(\.\.[\/\\])+/, '')
+  const shortFilePath = rawShortFilePath.replace(/\\/g, '/') // + resourceQuery // TODO how to get original resourceQuery
+  const id = hash(
+    isProduction
+      ? (shortFilePath + '\n' + source)
+      : shortFilePath
+  )
+  const idQuery = `&id=${id}`
+  const { scopedQuery, attrsQuery, inheritQuery } = loaderUtils.parseQuery(loaderContext.resourceQuery)
+  // see https://github.com/vuejs/vue-loader/blob/master/lib/index.js#L118
+  return `${resourcePath}?vue&type=template${idQuery}${scopedQuery}${attrsQuery}${inheritQuery}`
 }
 
 module.exports = function autoImportTagLoader (source, map) {
   const loaderContext = this
   const callback = loaderContext.async()
-  const compiledTemplateRequest = `${loaderContext.resourcePath}?vue&type=template`
-  loaderContext.loadModule(compiledTemplateRequest, (err, source, sourceMap, module) => {
-    const output = autoImportTagCodeGenerate(source, map, loaderContext.resourcePath)
+  const resourcePath = loaderContext.resourcePath
+  loaderContext.loadModule(getTemplateRequest(loaderContext, source), (err, templateSource, templateSourceMap, module) => {
+    console.log('auto-import-tag loader async ' + resourcePath)
+    const output = autoImportTagCodeGenerate(source, map, resourcePath)
     callback(null, output)
   })
 }

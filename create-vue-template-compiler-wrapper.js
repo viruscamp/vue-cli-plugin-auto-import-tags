@@ -1,6 +1,3 @@
-//import { parse } from 'vue/src/compiler/parser'
-//const compile = require('vue-template-compiler').compile
-//import * as VueTemplateCompiler from 'vue-template-compiler'
 const VueTemplateCompiler = require('vue-template-compiler')
 const tagsCache = require('./tagsCache')
 
@@ -44,50 +41,72 @@ function extractTagsFromAst (ast) {
   }
 
   function parseAst (ast) {
-    if (ast.component) {
-      try {
-        let componentName = looseStringParse(ast.component)
-        if (typeof(componentName) === 'string') {
-          tryAddTag(componentName)
+    if (ast.type === 1) {
+      // ast is ASTElement
+      // https://github.com/vuejs/vue/blob/dev/packages/vue-template-compiler/types/index.d.ts#L90:1
+      if (ast.component) {
+        // for <component is="a-input" /> or <component :is="'a-input'" />
+        // will fail on <component :is="dynamicComponent" />
+        // may be dangerous, maybe useless
+        try {
+          let componentName = looseStringParse(ast.component)
+          if (typeof(componentName) === 'string') {
+            tryAddTag(componentName)
+          }
+        } catch (ex) {
+          // do nothing
         }
-      } catch (ex) {
-        // do nothing
+      } else {
+        tryAddTag(ast.tag)
       }
-    } else if (typeof(ast.tag) === 'string') {
-      tryAddTag(ast.tag)
-    }
-    if (ast.children) {
-      ast.children.forEach(child => parseAst(child))
+      if (ast.children) {
+        ast.children.forEach(child => parseAst(child))
+      }
     }
   }
+
   parseAst(ast)
   return tags
 }
+
+const { attrsToQuery } = require('vue-loader/lib/codegen/utils')
 
 module.exports = function createVueTemplateCompilerWrapper (compiler) {
   const innerCompiler = compiler || VueTemplateCompiler
   return {
     parseComponent (source, options) {
       const descriptor = innerCompiler.parseComponent(source, options)
-      descriptor.customBlocks.push({
-        type: 'auto-import-tag',
-        content: '',
-        attrs: {},
-        start: 0,
-        end: 0
-      })
+      if (descriptor.template != null) {
+        // see https://github.com/vuejs/vue-loader/blob/master/lib/index.js#L94
+        // const idQuery = `&id=${id}` // TODO generate idQuery
+        const hasScoped = descriptor.styles.some(s => s.scoped)
+        descriptor.customBlocks.push({
+          type: 'auto-import-tag',
+          content: source, // TODO generate idQuery , cause I cannot get id here, I must pass source to where id can be calucated
+          attrs: {
+            idQuery: '', // TODO generate idQuery
+            scopedQuery: hasScoped ? `&scoped=true` : ``,
+            attrsQuery: attrsToQuery(descriptor.template.attrs),
+            inheritQuery: `&` // TODO should be `&${rawQuery}`
+          }
+        })
+      }
       return descriptor
     },
     compile (template, options) {
+      console.log('auto-import-tag compile ' + options.filename)
       const compiled = innerCompiler.compile(template, options)
-      const ast = compiled.ast
-      tagsCache.set(options.filename, extractTagsFromAst(ast))
+      if (compiled.ast != null) {
+        tagsCache.set(options.filename, extractTagsFromAst(compiled.ast))
+      }
       return compiled
     },
     ssrCompile (template, options) {
+      console.log('auto-import-tag ssrCompile ' + options.filename)
       const compiled = innerCompiler.ssrCompile(template, options)
-      const ast = compiled.ast
-      tagsCache.set(options.filename, extractTagsFromAst(ast))
+      if (compiled.ast != null) {
+        tagsCache.set(options.filename, extractTagsFromAst(compiled.ast))
+      }
       return compiled
     }
   }
