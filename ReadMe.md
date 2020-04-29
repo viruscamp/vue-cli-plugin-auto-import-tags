@@ -1,7 +1,8 @@
 # vue-cli-plugin-auto-import-tag
 Auto import vue components by tags.  
-Should be used along with using [babel-plugin-import](https://github.com/ant-design/babel-plugin-import) or [babel-plugin-transform-imports](https://github.com/viruscamp/babel-plugin-transform-imports/tree/babel-7).
+It should be used along with [babel-plugin-transform-imports](https://github.com/viruscamp/babel-plugin-transform-imports/tree/babel-7) or [babel-plugin-import](https://github.com/ant-design/babel-plugin-import).
 
+This lib is in alpha stage.  
 USE ON YOUR OWN RISK. WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 
 Currently, you cannot use it with babel-plugin-import, due to some bugs (maybe related to babel-plugin-import).  
@@ -11,10 +12,9 @@ Use it with my fork of babel-plugin-transform-imports.
 0. Prerequirements  Your project must have these as devDependencies:
 ```json
   "@vue/cli-service": "^3.0.0",
-
-  "babel-plugin-import": "^1.0.0",
+  "babel-plugin-transform-imports": "github:viruscamp/babel-plugin-transform-imports#babel-7",
   // or
-  "babel-plugin-transform-imports": "github:viruscamp/babel-plugin-transform-imports",
+  "babel-plugin-import": "^1.0.0", // not usable currently
 ```
 
 1. Install  
@@ -31,19 +31,10 @@ module.exports = {
   ],
   "plugins": [
     [
-      "import",
-      {
-        tagPrefix: "a", // added for babel-plugin-import
-        libraryName: "ant-design-vue",
-        libraryDirectory: "es",
-        style: "css"
-      }
-    ],
-    [
       "transform-imports", {
         "ant-design-vue": {
           tagPrefix: "a", // added for babel-plugin-transform-imports
-          kebabCase: true,
+          memberConverter: 'kebab',
           transform: "ant-design-vue/lib/${member}",
           transformStyle: "ant-design-vue/lib/${member}/style/css",
           preventFullImport: true
@@ -51,16 +42,30 @@ module.exports = {
         "my-library\/?(((\\w*)?\/?)*)": {
           tagPrefix: "my", // added for babel-plugin-transform-imports
           libraryName: "my-library", // added for babel-plugin-transform-imports's regular expressions library match
-          kebabCase: true,
+          memberConverter: 'kebab',
           transform: "my-library/${1}/${member}",
           transformStyle: "my-library/${1}/${member}/style",
           preventFullImport: true
         }
       }
+    ],
+    [
+      "import", {
+        tagPrefix: "a", // added for babel-plugin-import
+        libraryName: "ant-design-vue",
+        libraryDirectory: "es",
+        style: "css"
+      }
     ]
   ]
 }
-
+```
+Currently we donot support parallel build, so turn it off.
+```javascript
+// vue.config.js
+module.exports = {
+  parallel: false,
+}
 ```
 
 3. Code  
@@ -100,10 +105,12 @@ TODO
 2. Invalid for dynamic 'is', like \<div :is="compName" /\>
 3. Invalid for string template
 4. Invalid for render function and JSX
+5. Does not support parallel build
+6. It runs vue-template-compiler twice for one template part of a vue file
 
 ## Internals
 We generate the source like below, then feed it to babel-loader, pass to vue-loader as vue custom block output.  
-In babel, babel-plugin-import or babel-plugin-transform-imports will do the rest.
+In babel, babel-plugin-transform-imports or babel-plugin-import will do the rest.
 ```javascript
 import { DatePicker as ADatePicker } from 'ant-design-vue'
 import { AutoComplete as AAutoComplete } from 'ant-design-vue'

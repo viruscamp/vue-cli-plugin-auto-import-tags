@@ -82,7 +82,7 @@ module.exports = function createVueTemplateCompilerWrapper (compiler) {
         const hasScoped = descriptor.styles.some(s => s.scoped)
         descriptor.customBlocks.push({
           type: 'auto-import-tag',
-          content: source, // TODO generate idQuery , cause I cannot get id here, I must pass source to where id can be calucated
+          content: '', //source, // TODO generate idQuery , cause we cannot get id here, we must pass source to where id can be calucated
           attrs: {
             idQuery: '', // TODO generate idQuery
             scopedQuery: hasScoped ? `&scoped=true` : ``,

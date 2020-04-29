@@ -119,6 +119,7 @@ const hash = require('hash-sum')
 function getTemplateRequest (loaderContext, source) {
   const resourcePath = loaderContext.resourcePath
 
+  /*
   const options = loaderUtils.getOptions(loaderContext) || {}
   const isProduction = options.productionMode || loaderContext.minimize || process.env.NODE_ENV === 'production'
   const context = loaderContext.rootContext || process.cwd()
@@ -133,6 +134,8 @@ function getTemplateRequest (loaderContext, source) {
       : shortFilePath
   )
   const idQuery = `&id=${id}`
+  */
+  const idQuery = ``
   const { scopedQuery, attrsQuery, inheritQuery } = loaderUtils.parseQuery(loaderContext.resourceQuery)
   // see https://github.com/vuejs/vue-loader/blob/master/lib/index.js#L118
   return `${resourcePath}?vue&type=template${idQuery}${scopedQuery}${attrsQuery}${inheritQuery}`
