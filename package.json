@@ -16,6 +16,10 @@
     "url": "https://github.com/viruscamp/vue-cli-plugin-auto-import-tag"
   },
   "main": "index.js",
+  "dependencies": {
+    "sync-disk-cache": "^2.0.0",
+    "app-root-path": "^3.0.0"
+  },
   "peerDependencies": {
     "@babel/core": "^7.0.0",
     "vue-template-compiler": "^2.5.0"

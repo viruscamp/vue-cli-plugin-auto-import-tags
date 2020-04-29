@@ -1,11 +1,20 @@
-const cache = new Map()
+const path = require('path')
+const appRoot = require('app-root-path');
+const Cache = require('sync-disk-cache')
 
-function set (key, value) {
-  cache.set(key, value)
+const cache = new Cache('template-tags', {
+  location: path.join(appRoot.path, 'node_modules/.cache/vue-auto-import-tag')
+})
+
+//const cache = new Map()
+
+function set (key, tagsSet) {
+  cache.set(key, JSON.stringify(Array.from(tagsSet)))
 }
 
 function get (key) {
-  return cache.get(key)
+  const content = cache.get(key).value
+  return content == null ? content : JSON.parse(content)
 }
 
 module.exports.set = set
