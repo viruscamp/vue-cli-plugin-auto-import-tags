@@ -77,7 +77,7 @@ function dash2Camel (_str) {
   return str[0].toUpperCase() + str.substr(1)
 }
 
-const tagsCache = require('../tagsCache')
+const tagsCache = require('./tags-cache')
 
 function autoImportTagCodeGenerate (source, map, resourcePath) {
   const tags = tagsCache.get(resourcePath)
@@ -141,12 +141,12 @@ function getTemplateRequest (loaderContext, source) {
   return `${resourcePath}?vue&type=template${idQuery}${scopedQuery}${attrsQuery}${inheritQuery}`
 }
 
-module.exports = function autoImportTagLoader (source, map) {
+module.exports = function autoImportTagsLoader (source, map) {
   const loaderContext = this
   const callback = loaderContext.async()
   const resourcePath = loaderContext.resourcePath
   loaderContext.loadModule(getTemplateRequest(loaderContext, source), (err, templateSource, templateSourceMap, module) => {
-    console.log('auto-import-tag loader async ' + resourcePath)
+    console.log('auto-import-tags loader async ' + resourcePath)
     const output = autoImportTagCodeGenerate(source, map, resourcePath)
     callback(null, output)
   })

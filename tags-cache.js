@@ -3,7 +3,7 @@ const appRoot = require('app-root-path');
 const Cache = require('sync-disk-cache')
 
 const cache = new Cache('template-tags', {
-  location: path.join(appRoot.path, 'node_modules/.cache/vue-auto-import-tag')
+  location: path.join(appRoot.path, 'node_modules/.cache/vue-auto-import-tags')
 })
 
 //const cache = new Map()
