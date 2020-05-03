@@ -1,6 +1,6 @@
-# vue-cli-plugin-auto-import-tag
+# vue-cli-plugin-auto-import-tags
 Auto import vue components by tags.  
-It should be used along with [babel-plugin-transform-imports](https://github.com/viruscamp/babel-plugin-transform-imports/tree/babel-7) or [babel-plugin-import](https://github.com/ant-design/babel-plugin-import).
+It must be used along with [babel-plugin-transform-imports](https://github.com/viruscamp/babel-plugin-transform-imports/tree/babel-7) or [babel-plugin-import](https://github.com/ant-design/babel-plugin-import).
 
 This lib is in alpha stage.  
 USE ON YOUR OWN RISK. WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
@@ -18,7 +18,7 @@ Use it with my fork of babel-plugin-transform-imports.
 ```
 
 1. Install  
-```npm install github:viruscamp/vue-cli-plugin-auto-import-tag --save-dev```
+```npm install github:viruscamp/vue-cli-plugin-auto-import-tags --save-dev```
 
 2. Configurate  
 Just add "tagPrefix" to your existing babel-plugin-import/babel-plugin-transform-imports options in .babelrc or babel.config.js .  
@@ -60,7 +60,7 @@ module.exports = {
   ]
 }
 ```
-Currently we donot support parallel build, so turn it off.
+Currently the plugin does not support parallel build, so you must turn it off.
 ```javascript
 // vue.config.js
 module.exports = {
@@ -69,16 +69,7 @@ module.exports = {
 ```
 
 3. Code  
-You can now write:  
-```vue
-<template>
-  <div>
-    <AButton />
-    <a-auto-complete />
-  </div>
-</template>
-```
-Instead of:  
+Instead of writing:  
 ```vue
 <template>
   <div>
@@ -96,13 +87,34 @@ export default {
 }
 </script>
 ```
+You can now write:  
+```vue
+<template>
+  <div>
+    <AButton />
+    <a-auto-complete />
+  </div>
+</template>
+```
+Because it will generate a vue custom block , below is result code:  
+```javascript
+import { Button as AButton } from 'ant-design-vue'
+import { AutoComplete as AAutoComplete } from 'ant-design-vue'
+
+export default function (Component) {
+  let c = Component.options.components
+  if (c == null) c = Component.options.components = {}
+  if (c.AButton == null) c.AButton = AButton
+  if (c.AAutoComplete == null) c.AAutoComplete = AAutoComplete
+}
+```
 
 ## Usage with manual mantained webpack.conf
 TODO
 
 ## Limitations
 1. Only works for *.vue file \<template\> part
-2. Invalid for dynamic 'is', like \<div :is="compName" /\>
+2. Invalid for directive 'is', like \<div is="staticComponent" /\> or \<div :is="dynamicComponent" /\>
 3. Invalid for string template
 4. Invalid for render function and JSX
 5. Does not support parallel build

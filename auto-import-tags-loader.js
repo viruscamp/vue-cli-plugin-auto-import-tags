@@ -42,10 +42,7 @@ if (babelConfig.options && babelConfig.options.plugins) {
 }
 
 function isValidImport (compnentName, libraryName) {
-  // TODO 检查 库中是否存在组件
-  /* 目前仍然生成了
-  import { Abc as AAbc } from 'ant-design-vue'
-  */
+  // TODO check module exists
   return true
 }
 
@@ -146,7 +143,7 @@ module.exports = function autoImportTagsLoader (source, map) {
   const callback = loaderContext.async()
   const resourcePath = loaderContext.resourcePath
   loaderContext.loadModule(getTemplateRequest(loaderContext, source), (err, templateSource, templateSourceMap, module) => {
-    console.log('auto-import-tags loader async ' + resourcePath)
+    //console.log('auto-import-tags loader async ' + resourcePath)
     const output = autoImportTagCodeGenerate(source, map, resourcePath)
     callback(null, output)
   })

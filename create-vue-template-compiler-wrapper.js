@@ -16,7 +16,7 @@ module.exports = function createVueTemplateCompilerWrapper (compiler) {
         const hasScoped = descriptor.styles.some(s => s.scoped)
         descriptor.customBlocks.push({
           type: 'auto-import-tags',
-          content: '', //source, // TODO generate idQuery , cause we cannot get id here, we must pass source to where id can be calucated
+          content: '', // TODO generate idQuery , cause we cannot get id here, we must pass source to where id can be calucated
           attrs: {
             idQuery: '', // TODO generate idQuery
             scopedQuery: hasScoped ? `&scoped=true` : ``,
@@ -28,7 +28,7 @@ module.exports = function createVueTemplateCompilerWrapper (compiler) {
       return descriptor
     },
     compile (template, options) {
-      console.log('auto-import-tags compile ' + options.filename)
+      //console.log('auto-import-tags compile ' + options.filename)
       const compiled = innerCompiler.compile(template, options)
       if (compiled.ast != null) {
         tagsCache.set(options.filename, extractTagsFromAst(compiled.ast))
@@ -36,7 +36,7 @@ module.exports = function createVueTemplateCompilerWrapper (compiler) {
       return compiled
     },
     ssrCompile (template, options) {
-      console.log('auto-import-tags ssrCompile ' + options.filename)
+      //console.log('auto-import-tags ssrCompile ' + options.filename)
       const compiled = innerCompiler.ssrCompile(template, options)
       if (compiled.ast != null) {
         tagsCache.set(options.filename, extractTagsFromAst(compiled.ast))
